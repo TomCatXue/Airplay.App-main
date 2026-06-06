@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="AirPlay.App/AirPlay.App.csproj">
+    <Platform Project="x64" />
+    <Platform Project="ARM64" />
+    <Deploy />
+  </Project>
+  <Project Path="Airplay.Core2/AirPlay.Core2/AirPlay.Core2.csproj" />
+</Solution>
