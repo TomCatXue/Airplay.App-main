@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<winuiex:WindowEx
+    x:Class="AirPlay.App.Windows.MirrorWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:AirPlay.App.Windows"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:win2d="using:Microsoft.Graphics.Canvas.UI.Xaml"
+    xmlns:winuiex="using:WinUIEx"
+    mc:Ignorable="d">
+
+    <winuiex:WindowEx.SystemBackdrop>
+        <MicaBackdrop />
+    </winuiex:WindowEx.SystemBackdrop>
+
+    <Grid x:Name="RootGrid" Unloaded="Grid_Unloaded">
+        <Grid.Resources>
+            <ThemeShadow x:Key="SharedShadow" />
+        </Grid.Resources>
+
+        <Border
+            x:Name="Border"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Loaded="Border_Loaded"
+            SizeChanged="Border_SizeChanged" />
+
+        <Viewbox Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <win2d:CanvasAnimatedControl
+                x:Name="Canvas"
+                CreateResources="Canvas_CreateResources"
+                Draw="Canvas_Draw"
+                Paused="True" />
+        </Viewbox>
+
+        <Popup
+            x:Name="Popup"
+            DesiredPlacement="Top"
+            LightDismissOverlayMode="Off"
+            PlacementTarget="{x:Bind Border}"
+            Shadow="{ThemeResource SharedShadow}"
+            ShouldConstrainToRootBounds="False"
+            Translation="0,0,32"
+            VerticalOffset="-8">
+            <Popup.Transitions>
+                <TransitionCollection>
+                    <PopupThemeTransition />
+                </TransitionCollection>
+            </Popup.Transitions>
+            <Popup.SystemBackdrop>
+                <DesktopAcrylicBackdrop />
+            </Popup.SystemBackdrop>
+            <Border
+                Padding="16,12"
+                BorderBrush="{ThemeResource ButtonBorderBrushPointerOver}"
+                BorderThickness="1"
+                CornerRadius="8">
+                <Grid Padding="8,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <FontIcon FontSize="16" Glyph="{x:Bind DeviceIcon}" />
+
+                    <StackPanel
+                        Grid.Column="2"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Style="{ThemeResource BaseTextBlockStyle}"
+                            Text="{x:Bind Session.DeviceDisplayName}"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="NoWrap" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
+                            Style="{ThemeResource CaptionTextBlockStyle}"
+                            Text="{x:Bind Session.DeviceModel}"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="NoWrap" />
+                    </StackPanel>
+
+                    <StackPanel
+                        Grid.Column="4"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <StackPanel.Resources>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderBrush" Value="Transparent" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="CornerRadius" Value="4" />
+                                </Style>
+                                <Style TargetType="FontIcon">
+                                    <Setter Property="FontSize" Value="10" />
+                                </Style>
+                            </StackPanel.Resources>
+                            <Button Click="MinimizeButton_Click" ToolTipService.ToolTip="Minimize">
+                                <FontIcon Glyph="&#xE921;" />
+                            </Button>
+                            <Button Click="CloseButton_Click" ToolTipService.ToolTip="Disconnect">
+                                <FontIcon Glyph="&#xE8BB;" />
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Popup>
+
+        <ContentDialog
+            x:Name="ConfirmDialog"
+            Title="Disconnect"
+            CloseButtonText="Cancel"
+            DefaultButton="Primary"
+            PrimaryButtonClick="ConfirmDialog_PrimaryButtonClick"
+            PrimaryButtonStyle="{ThemeResource AccentButtonStyle}"
+            PrimaryButtonText="Disconnect"
+            Style="{ThemeResource DefaultContentDialogStyle}">
+            <TextBlock Text="Closing this window will disconnect you from the device, interrupting screen mirroring and audio streaming." TextWrapping="WrapWholeWords" />
+        </ContentDialog>
+    </Grid>
+</winuiex:WindowEx>
