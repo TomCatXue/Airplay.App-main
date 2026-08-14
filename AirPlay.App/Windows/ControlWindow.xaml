@@ -7,7 +7,7 @@
     xmlns:local="using:AirPlay.App.Windows"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:winuiex="using:WinUIEx"
-    Title="AirPlay Control Window"
+    Title="AirPlay 控制面板"
     mc:Ignorable="d">
 
     <winuiex:WindowEx.SystemBackdrop>

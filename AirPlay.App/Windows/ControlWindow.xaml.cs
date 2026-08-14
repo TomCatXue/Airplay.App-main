@@ -17,8 +17,8 @@ public sealed partial class ControlWindow : WindowEx
 
     public ControlWindow()
     {
-        this.Width = 400;
-        this.Height = 320;
+        this.Width = 420;
+        this.Height = 400;
 
         this.ExtendsContentIntoTitleBar = true;
         this.IsTitleBarVisible = false;
@@ -31,6 +31,9 @@ public sealed partial class ControlWindow : WindowEx
 
         // 设置整个 Grid 为可拖拽标题栏区域
         this.SetTitleBar(RootGrid);
+
+        // Apple 风格圆角：通过 DWM API 设置
+        SetWindowCorner(WinRT.Interop.WindowNative.GetWindowHandle(this));
     }
 
     private void OnWindowMessageReceived(object? sender, WindowMessageEventArgs e)
@@ -64,4 +67,16 @@ public sealed partial class ControlWindow : WindowEx
             0x41
         );
     }
+    private static void SetWindowCorner(System.IntPtr hwnd)
+    {
+        try
+        {
+            int preference = 2; // Round (Apple 风格)
+            DwmSetWindowAttribute(hwnd, 33, ref preference, sizeof(int));
+        }
+        catch { }
+    }
+
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(System.IntPtr hwnd, int attr, ref int value, int size);
 }
