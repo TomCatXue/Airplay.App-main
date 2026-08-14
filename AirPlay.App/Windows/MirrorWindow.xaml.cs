@@ -26,6 +26,7 @@ public sealed partial class MirrorWindow : WindowEx
 {
     private readonly Timer _timer = new(TimeSpan.FromSeconds(1));
     private readonly Lock _bitmapLock = new();
+    private const double InitialScaleFactor = 0.85;
 
     private Size _frameSize;
     private int _decodedFrames = 0;
@@ -51,8 +52,8 @@ public sealed partial class MirrorWindow : WindowEx
 
         // 窗口大小 = 视频原始分辨率 ÷ DPI，保证 1:1 像素映射清晰度
         double scale = GetDpiScale();
-        Width = size.Width / scale;
-        Height = size.Height / scale;
+        Width = size.Width / scale * InitialScaleFactor;
+        Height = size.Height / scale * InitialScaleFactor;
 
         (Canvas.Width, Canvas.Height) = (size.Width, size.Height);
         Canvas.TargetElapsedTime = TimeSpan.FromSeconds(1 / (double)this.GetRefreshRate());
@@ -107,8 +108,8 @@ public sealed partial class MirrorWindow : WindowEx
             try
             {
                 double scale = GetDpiScale();
-                Width = size.Width / scale;
-                Height = size.Height / scale;
+                Width = size.Width / scale * InitialScaleFactor;
+                Height = size.Height / scale * InitialScaleFactor;
                 // 视频切换时重新居中
                 CenterWindow();
             }
@@ -224,6 +225,12 @@ public sealed partial class MirrorWindow : WindowEx
             Debug.WriteLine($"FPS: {fps} (Dropped: {dropped})");
         else
             Debug.WriteLine($"FPS: {fps}");
+
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (FpsText != null)
+                FpsText.Text = dropped > 0 ? $"{fps} FPS | 丢帧 {dropped}" : $"{fps} FPS";
+        });
     }
 
     private void OnWindowClosed(object sender, WindowEventArgs args)

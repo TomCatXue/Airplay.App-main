@@ -26,7 +26,7 @@
             Loaded="Border_Loaded"
             SizeChanged="Border_SizeChanged" />
 
-        <Viewbox Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Viewbox Stretch="UniformToFill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <win2d:CanvasAnimatedControl
                 x:Name="Canvas"
                 CreateResources="Canvas_CreateResources"
@@ -55,7 +55,7 @@
                 Padding="16,12"
                 BorderBrush="{ThemeResource ButtonBorderBrushPointerOver}"
                 BorderThickness="1"
-                CornerRadius="8">
+                CornerRadius="18">
                 <Grid Padding="8,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -74,12 +74,15 @@
                         Spacing="8">
                         <TextBlock
                             VerticalAlignment="Center"
+                            FontSize="14"
+                            FontWeight="SemiBold"
                             Style="{ThemeResource BaseTextBlockStyle}"
                             Text="{x:Bind Session.DeviceDisplayName}"
                             TextTrimming="CharacterEllipsis"
                             TextWrapping="NoWrap" />
                         <TextBlock
                             VerticalAlignment="Center"
+                            FontSize="12"
                             Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
                             Style="{ThemeResource CaptionTextBlockStyle}"
                             Text="{x:Bind Session.DeviceModel}"
@@ -92,6 +95,13 @@
                         VerticalAlignment="Center"
                         Orientation="Horizontal"
                         Spacing="8">
+                        <TextBlock
+                            x:Name="FpsText"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
+                            FontSize="11"
+                            FontFamily="Consolas"
+                            Text="0 FPS" />
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <StackPanel.Resources>
                                 <Style TargetType="Button">
@@ -104,28 +114,29 @@
                                     <Setter Property="FontSize" Value="10" />
                                 </Style>
                             </StackPanel.Resources>
-                            <Button Click="MinimizeButton_Click" ToolTipService.ToolTip="Minimize">
+                            <Button Click="MinimizeButton_Click" ToolTipService.ToolTip="最小化">
                                 <FontIcon Glyph="&#xE921;" />
                             </Button>
-                            <Button Click="CloseButton_Click" ToolTipService.ToolTip="Disconnect">
+                            <Button Click="CloseButton_Click" ToolTipService.ToolTip="断开">
                                 <FontIcon Glyph="&#xE8BB;" />
                             </Button>
                         </StackPanel>
                     </StackPanel>
+
                 </Grid>
             </Border>
         </Popup>
 
         <ContentDialog
             x:Name="ConfirmDialog"
-            Title="Disconnect"
-            CloseButtonText="Cancel"
+            Title="断开连接"
+            CloseButtonText="取消"
             DefaultButton="Primary"
             PrimaryButtonClick="ConfirmDialog_PrimaryButtonClick"
             PrimaryButtonStyle="{ThemeResource AccentButtonStyle}"
-            PrimaryButtonText="Disconnect"
+            PrimaryButtonText="断开"
             Style="{ThemeResource DefaultContentDialogStyle}">
-            <TextBlock Text="Closing this window will disconnect you from the device, interrupting screen mirroring and audio streaming." TextWrapping="WrapWholeWords" />
+            <TextBlock Text="关闭此窗口将断开与设备的连接，中断屏幕镜像和音频播放。" TextWrapping="WrapWholeWords" />
         </ContentDialog>
     </Grid>
 </winuiex:WindowEx>

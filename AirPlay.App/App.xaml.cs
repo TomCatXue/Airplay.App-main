@@ -1,4 +1,4 @@
-﻿using AirPlay.App.Extensions;
+using AirPlay.App.Extensions;
 using AirPlay.App.FFmmpeg;
 using AirPlay.App.Services;
 using AirPlay.App.Windows;
@@ -75,7 +75,17 @@ public partial class App : Application
                 {
                     configure.WriteTo.Logger(l => l.WriteTo
                         .Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}][{Level:u3}] <{SourceContext}>: {Message:lj}{NewLine}{Exception}"));
-                });
+
+                    try
+                    {
+                        var appData = global::Windows.Storage.ApplicationData.Current;
+                        configure.WriteTo.File(
+                            path: System.IO.Path.Combine(appData.LocalFolder.Path, "applog-.txt"),
+                            rollingInterval: Serilog.RollingInterval.Day,
+                            outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}][{Level:u3}] <{SourceContext}>: {Message:lj}{NewLine}{Exception}");
+                    }
+                    catch { }
+                });;
             });
 
         Host = builder.Start();
@@ -97,35 +107,35 @@ public partial class App : Application
         XamlUICommand command = new()
         {
             IconSource = new SymbolIconSource() { Symbol = Symbol.Cancel },
-            Label = "Exit",
-            Description = "Exit the application"
+            Label = "退出",
+            Description = "退出应用"
         };
 
         command.ExecuteRequested += (s, e) => Current.Exit();
         leftButtonCommand.ExecuteRequested += LeftButtonCommand_ExecuteRequested;
 
-        var item = new MenuFlyoutItem()
-        {
-            Text = "Quit",
-            Command = command
-        };
-
         TaskbarIcon = new()
         {
             ContextMenuMode = ContextMenuMode.PopupMenu,
-            ToolTipText = "AirPlay App",
+            ToolTipText = "AirPlay 投屏接收器",
             NoLeftClickDelay = true,
             IconSource = GetIconTheme(ShouldSystemUseDarkMode()),
             LeftClickCommand = leftButtonCommand,
             ContextFlyout = new MenuFlyout()
             {
-                Items = 
-                { 
+                Items =
+                {
                     new MenuFlyoutItem()
                     {
-                        Text = "Quit",
+                        Text = "打开控制面板",
+                        Command = leftButtonCommand
+                    },
+                    new MenuFlyoutSeparator(),
+                    new MenuFlyoutItem()
+                    {
+                        Text = "退出",
                         Command = command
-                    } 
+                    }
                 }
             }
         };
@@ -149,3 +159,5 @@ public partial class App : Application
     [DllImport("UXTheme.dll", SetLastError = true, EntryPoint = "#138")]
     public static extern bool ShouldSystemUseDarkMode();
 }
+
+
