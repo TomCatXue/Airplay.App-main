@@ -1,4 +1,4 @@
-# AirPlay Windows App (ARM64)
+﻿# AirPlay Windows App (ARM64)
 
 将 Windows on ARM64 设备变为 AirPlay 接收器，支持 iPhone / iPad / Mac 屏幕镜像与音频投送。
 
@@ -25,9 +25,9 @@
 
 ## 📦 安装
 
-1. 下载最新 `AirPlay.App_1.0.0.0_arm64.msix`（位于 `AirPlay.App/AppPackages-SelfContained/`）
+1. 下载最新 `AirPlay.App_1.0.1.0_arm64.msix`（位于 `AirPlay.App/AppPackages-SelfContained/`）
 2. 启用 Windows **开发人员模式**
-3. 首次安装：将同目录 `AirPlay.App_1.0.0.0_arm64.cer` 证书安装到 **受信任的根证书颁发机构 / 受信任人**
+3. 首次安装：将同目录 `AirPlay.App_1.0.1.0_arm64.cer` 证书安装到 **受信任的根证书颁发机构 / 受信任人**
 4. 若已安装旧版，先卸载：
    ```powershell
    Get-AppxPackage -Name "AirPlay.App" | Remove-AppxPackage

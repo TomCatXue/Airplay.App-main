@@ -1,4 +1,4 @@
-using AirPlay.App.Extensions;
+﻿using AirPlay.App.Extensions;
 using AirPlay.App.Models;
 using AirPlay.App.Services;
 using AirPlay.Core2.Models;
@@ -42,6 +42,8 @@ public sealed partial class ControlPage : Page
         if (Enum.TryParse<MediaControlCommand>(button.Tag.ToString(), out var command))
             _smtcControlService.SendMediaControlCommand(command);
     }
+
+    private void SettingsButton_Click(object sender, RoutedEventArgs e) => Frame.Navigate(typeof(SettingsPage));
 
     private void Grid_Loaded(object sender, RoutedEventArgs e)
     {

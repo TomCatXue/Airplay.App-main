@@ -10,7 +10,7 @@
   <Identity
     Name="AirPlay.App"
     Publisher="CN=Natsurainko"
-    Version="1.0.0.0" />
+    Version="1.0.1.0" />
 	
   <Properties>
     <DisplayName>AirPlay App</DisplayName>
