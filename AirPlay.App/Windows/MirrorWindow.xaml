@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <winuiex:WindowEx
     x:Class="AirPlay.App.Windows.MirrorWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -26,7 +26,11 @@
             Loaded="Border_Loaded"
             SizeChanged="Border_SizeChanged" />
 
-        <Viewbox Stretch="UniformToFill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Viewbox
+            x:Name="VideoViewbox"
+            HorizontalAlignment="Stretch"
+            Stretch="UniformToFill"
+            VerticalAlignment="Stretch">
             <win2d:CanvasAnimatedControl
                 x:Name="Canvas"
                 CreateResources="Canvas_CreateResources"
@@ -116,6 +120,9 @@
                             </StackPanel.Resources>
                             <Button Click="MinimizeButton_Click" ToolTipService.ToolTip="最小化">
                                 <FontIcon Glyph="&#xE921;" />
+                            </Button>
+                            <Button Click="FullScreenButton_Click" ToolTipService.ToolTip="全屏">
+                                <FontIcon Glyph="&#xE740;" />
                             </Button>
                             <Button Click="CloseButton_Click" ToolTipService.ToolTip="断开">
                                 <FontIcon Glyph="&#xE8BB;" />

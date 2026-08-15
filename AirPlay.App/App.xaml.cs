@@ -1,4 +1,4 @@
-using AirPlay.App.Extensions;
+﻿using AirPlay.App.Extensions;
 using AirPlay.App.FFmmpeg;
 using AirPlay.App.Services;
 using AirPlay.App.Windows;
@@ -55,12 +55,27 @@ public partial class App : Application
                 System.Windows.Forms.MessageBoxIcon.Error);
         }
 
+        var appSettings = new AppSettingsService();
+
         var builder = new HostBuilder()
             .ConfigureServices((hostContext, services) =>
             {
                 services.UseAirPlayService();
 
-                services.Configure<AirPlayConfig>(c => c.ServiceName = "AirPlay Windows App");
+                services.AddSingleton(appSettings);
+
+                services.Configure<AirPlayConfig>(c =>
+                {
+                    c.ServiceName = appSettings.Settings.ServiceName;
+                    c.Port = appSettings.Settings.AirPlayPort;
+                });
+
+                services.Configure<AirTunesConfig>(c =>
+                {
+                    c.ServiceName = "AirTunes";
+                    c.MacAddress = "11:22:33:44:55:66";
+                    c.Port = appSettings.Settings.AirTunesPort;
+                });
 
                 services.AddSingleton<SmtcControlService>();
                 services.AddHostedService(p => p.GetRequiredService<SmtcControlService>());

@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="AirPlay.App.Windows.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="12,8,12,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="0,0,0,8" Orientation="Horizontal" Spacing="8">
+            <Button
+                Width="32"
+                Height="32"
+                Padding="0"
+                Background="Transparent"
+                BorderBrush="Transparent"
+                BorderThickness="0"
+                Click="BackButton_Click"
+                CornerRadius="6"
+                ToolTipService.ToolTip="返回">
+                <FontIcon FontSize="14" Glyph="&#xE72B;" />
+            </Button>
+            <TextBlock
+                VerticalAlignment="Center"
+                FontSize="16"
+                FontWeight="SemiBold"
+                Text="设置" />
+        </StackPanel>
+
+        <ScrollViewer
+            Grid.Row="1"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Visible"
+            VerticalScrollMode="Enabled">
+            <StackPanel
+                MaxWidth="360"
+                HorizontalAlignment="Left"
+                Spacing="10">
+                <TextBox
+                    x:Name="ServiceNameBox"
+                    Header="服务名"
+                    PlaceholderText="AirPlay Windows App" />
+
+                <TextBox
+                    x:Name="AirTunesPortBox"
+                    Header="音频端口 (AirTunes)"
+                    InputScope="Number"
+                    Text="5000" />
+
+                <TextBox
+                    x:Name="AirPlayPortBox"
+                    Header="投屏端口 (AirPlay)"
+                    InputScope="Number"
+                    Text="7100" />
+
+                <ComboBox
+                    x:Name="NetworkCombo"
+                    HorizontalAlignment="Stretch"
+                    Header="网卡" />
+
+                <ToggleSwitch
+                    x:Name="StartWithWindowsToggle"
+                    Header="开机自启"
+                    OffContent="关"
+                    OnContent="开" />
+
+                <TextBlock
+                    Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
+                    Style="{ThemeResource CaptionTextBlockStyle}"
+                    Text="端口和网卡修改后需要重启应用生效"
+                    TextWrapping="Wrap" />
+
+                <Button
+                    HorizontalAlignment="Right"
+                    Click="SaveButton_Click"
+                    Content="保存"
+                    Style="{ThemeResource AccentButtonStyle}" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

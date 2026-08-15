@@ -1,10 +1,11 @@
-using AirPlay.App.Extensions;
+﻿using AirPlay.App.Extensions;
 using AirPlay.Core2.Models;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Buffers;
 using System.Diagnostics;
@@ -37,6 +38,7 @@ public sealed partial class MirrorWindow : WindowEx
 
     private bool _isRendering = false;
     private bool _isDisposed = false;
+    private bool _isFullScreen = false;
 
     public MirrorWindow(DeviceSession session, Size size)
     {
@@ -283,6 +285,23 @@ public sealed partial class MirrorWindow : WindowEx
     public DeviceSession Session { get; private set; }
 
     private void MinimizeButton_Click(object sender, RoutedEventArgs e) => this.Minimize();
+
+    private void FullScreenButton_Click(object sender, RoutedEventArgs e)
+    {
+        _isFullScreen = !_isFullScreen;
+        VideoViewbox.Stretch = _isFullScreen ? Stretch.Uniform : Stretch.UniformToFill;
+
+        try
+        {
+            this.AppWindow.SetPresenter(
+                _isFullScreen
+                    ? Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen
+                    : Microsoft.UI.Windowing.AppWindowPresenterKind.Overlapped);
+        }
+        catch
+        {
+        }
+    }
 
     private async void CloseButton_Click(object sender, RoutedEventArgs e) => await ConfirmDialog.ShowAsync();
 

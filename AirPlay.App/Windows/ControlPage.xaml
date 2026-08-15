@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="AirPlay.App.Windows.ControlPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -90,6 +90,22 @@
                     Text="已连接的设备会显示在这里" />
             </StackPanel>
         </StackPanel>
+
+        <Button
+            Width="32"
+            Height="32"
+            Margin="0,8,8,0"
+            Padding="0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Background="Transparent"
+            BorderBrush="Transparent"
+            BorderThickness="0"
+            Click="SettingsButton_Click"
+            CornerRadius="6"
+            ToolTipService.ToolTip="设置">
+            <FontIcon FontSize="14" Glyph="&#xE713;" />
+        </Button>
 
         <Popup
             x:Name="ControlPopup"
