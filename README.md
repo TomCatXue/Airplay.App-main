@@ -25,18 +25,21 @@
 
 ## 📦 安装
 
-1. 下载最新 `AirPlay.App_1.0.1.0_arm64.msix`（位于 `AirPlay.App/AppPackages-SelfContained/`）
-2. 启用 Windows **开发人员模式**
-3. 首次安装：将同目录 `AirPlay.App_1.0.1.0_arm64.cer` 证书安装到 **受信任的根证书颁发机构 / 受信任人**
-4. 若已安装旧版，先卸载：
+1. 下载同目录下的两个文件：
+   - `AirPlay.App_1.0.1.0_arm64.msix`
+   - `AirPlay.App_1.0.1.0_arm64.cer`
+2. 首次安装必须先安装证书（否则会出现“无法验证应用的发布者证书”）：
+   - 双击 `.cer` → **安装证书** → 选择“当前用户”
+   - 存储位置选择 **受信任的人 (Trusted People)**（如仍提示不受信任，再同时安装到“受信任的根证书颁发机构”）
+3. 若已安装旧版，先卸载：
    ```powershell
    Get-AppxPackage -Name "AirPlay.App" | Remove-AppxPackage
    ```
-5. 安装：
+4. 安装：
    ```powershell
-   Add-AppxPackage -Path "AirPlay.App_1.0.0.0_arm64.msix"
+   Add-AppxPackage -Path ".\AirPlay.App_1.0.1.0_arm64.msix"
    ```
-6. iOS / iPad / Mac 与 PC 同一局域网 → 控制中心 → **屏幕镜像** → 选择 "AirPlay Windows App"
+5. iOS / iPad / Mac 与 PC 同一局域网 → 控制中心 → **屏幕镜像** → 选择 "AirPlay Windows App"
 
 > 本版本为**自包含**打包：内置运行时，不依赖系统组件，系统更新不会破坏应用。
 
