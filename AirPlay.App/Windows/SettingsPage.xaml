@@ -7,79 +7,146 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Padding="12,8,12,12">
+    <Grid Background="Transparent">
+        <Grid.Resources>
+            <!-- 统一输入控件样式：圆角、描边、留白 -->
+            <Style x:Key="SettingsTextBoxStyle" TargetType="TextBox">
+                <Setter Property="MinHeight" Value="40" />
+                <Setter Property="Padding" Value="12,8" />
+                <Setter Property="BorderBrush" Value="{ThemeResource ControlStrokeColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Background" Value="{ThemeResource ControlFillColorDefaultBrush}" />
+            </Style>
+            <Style x:Key="SettingsComboBoxStyle" TargetType="ComboBox">
+                <Setter Property="MinHeight" Value="40" />
+                <Setter Property="Padding" Value="12,6" />
+                <Setter Property="CornerRadius" Value="8" />
+            </Style>
+            <!-- 分区卡片容器 -->
+            <Style x:Key="SettingsCardStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource LayerFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="16" />
+                <Setter Property="Padding" Value="16" />
+            </Style>
+            <!-- 分区标题 -->
+            <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+                <Setter Property="Margin" Value="4,0,0,10" />
+            </Style>
+        </Grid.Resources>
+
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Margin="0,0,0,8" Orientation="Horizontal" Spacing="8">
+        <!-- 顶部导航栏（同时作为窗口拖拽区） -->
+        <Grid x:Name="PageTitleBar" Grid.Row="0" Height="48" Padding="12,0,12,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
             <Button
                 Width="32"
                 Height="32"
                 Padding="0"
+                VerticalAlignment="Center"
                 Background="Transparent"
-                BorderBrush="Transparent"
                 BorderThickness="0"
                 Click="BackButton_Click"
-                CornerRadius="6"
+                CornerRadius="8"
                 ToolTipService.ToolTip="返回">
                 <FontIcon FontSize="14" Glyph="&#xE72B;" />
             </Button>
             <TextBlock
+                Grid.Column="1"
                 VerticalAlignment="Center"
                 FontSize="16"
                 FontWeight="SemiBold"
+                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                 Text="设置" />
-        </StackPanel>
+        </Grid>
 
         <ScrollViewer
             Grid.Row="1"
             HorizontalScrollBarVisibility="Disabled"
-            VerticalScrollBarVisibility="Visible"
+            VerticalScrollBarVisibility="Auto"
             VerticalScrollMode="Enabled">
-            <StackPanel
-                MaxWidth="360"
-                HorizontalAlignment="Left"
-                Spacing="10">
-                <TextBox
-                    x:Name="ServiceNameBox"
-                    Header="服务名"
-                    PlaceholderText="AirPlay Windows App" />
+            <StackPanel Padding="16,4,16,16" Spacing="16">
 
-                <TextBox
-                    x:Name="AirTunesPortBox"
-                    Header="音频端口 (AirTunes)"
-                    InputScope="Number"
-                    Text="5000" />
+                <!-- 服务信息 -->
+                <StackPanel Spacing="0">
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="服务信息" />
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <StackPanel Spacing="14">
+                            <TextBox
+                                x:Name="ServiceNameBox"
+                                Header="服务名"
+                                PlaceholderText="AirPlay Windows App"
+                                Style="{StaticResource SettingsTextBoxStyle}" />
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox
+                                    x:Name="AirTunesPortBox"
+                                    Grid.Column="0"
+                                    Header="音频端口 (AirTunes)"
+                                    InputScope="Number"
+                                    Style="{StaticResource SettingsTextBoxStyle}" />
+                                <TextBox
+                                    x:Name="AirPlayPortBox"
+                                    Grid.Column="1"
+                                    Header="投屏端口 (AirPlay)"
+                                    InputScope="Number"
+                                    Style="{StaticResource SettingsTextBoxStyle}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
 
-                <TextBox
-                    x:Name="AirPlayPortBox"
-                    Header="投屏端口 (AirPlay)"
-                    InputScope="Number"
-                    Text="7100" />
+                <!-- 网络 -->
+                <StackPanel Spacing="0">
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="网络" />
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <StackPanel Spacing="6">
+                            <ComboBox
+                                x:Name="NetworkCombo"
+                                HorizontalAlignment="Stretch"
+                                Header="网卡"
+                                Style="{StaticResource SettingsComboBoxStyle}" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                Text="端口和网卡修改后需要重启应用生效"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
 
-                <ComboBox
-                    x:Name="NetworkCombo"
-                    HorizontalAlignment="Stretch"
-                    Header="网卡" />
+                <!-- 启动 -->
+                <StackPanel Spacing="0">
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="启动" />
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <ToggleSwitch
+                            x:Name="StartWithWindowsToggle"
+                            Header="开机自启"
+                            OffContent="关"
+                            OnContent="开" />
+                    </Border>
+                </StackPanel>
 
-                <ToggleSwitch
-                    x:Name="StartWithWindowsToggle"
-                    Header="开机自启"
-                    OffContent="关"
-                    OnContent="开" />
-
-                <TextBlock
-                    Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                    Style="{ThemeResource CaptionTextBlockStyle}"
-                    Text="端口和网卡修改后需要重启应用生效"
-                    TextWrapping="Wrap" />
-
+                <!-- 保存 -->
                 <Button
-                    HorizontalAlignment="Right"
+                    HorizontalAlignment="Stretch"
                     Click="SaveButton_Click"
-                    Content="保存"
+                    Content="保存设置"
                     Style="{ThemeResource AccentButtonStyle}" />
             </StackPanel>
         </ScrollViewer>

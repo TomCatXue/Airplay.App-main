@@ -150,20 +150,24 @@ public class MirrorDataConnection(ushort receivePort, string streamConnectionId,
         h264Data = null;
         int naluSize = 0;
 
+        // 将 AVCC 格式（4 字节大端长度前缀 + NALU）逐个转换为 Annex-B 起始码格式。
+        // 修复：此前循环内的 "if (payload.Length - nc_len > 4) return false;" 会把
+        // 任何包含多个 NALU 的帧（payload 长度 > 首个 NALU + 4）整体丢弃，导致画面不显示。
+        // 现改为严格的边界检查：长度前缀合法且 NALU 不越界才继续，越界则判为坏帧丢弃。
         while (naluSize < payload.Length)
         {
+            if (naluSize + 4 > payload.Length) return false;
+
             int nc_len = (payload[naluSize + 3] & 0xFF) | ((payload[naluSize + 2] & 0xFF) << 8) | ((payload[naluSize + 1] & 0xFF) << 16) | ((payload[naluSize] & 0xFF) << 24);
 
-            if (nc_len > 0)
-            {
-                payload[naluSize] = 0;
-                payload[naluSize + 1] = 0;
-                payload[naluSize + 2] = 0;
-                payload[naluSize + 3] = 1;
-                naluSize += nc_len + 4;
-            }
+            if (nc_len <= 0) return false;
+            if (naluSize + 4 + nc_len > payload.Length) return false;
 
-            if (payload.Length - nc_len > 4) return false;
+            payload[naluSize] = 0;
+            payload[naluSize + 1] = 0;
+            payload[naluSize + 2] = 0;
+            payload[naluSize + 3] = 1;
+            naluSize += nc_len + 4;
         }
 
         if (spsPps.Length == 0) return false;

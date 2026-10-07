@@ -45,11 +45,25 @@ public sealed partial class ControlPage : Page
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e) => Frame.Navigate(typeof(SettingsPage));
 
-    private void Grid_Loaded(object sender, RoutedEventArgs e)
+    private bool _wired = false;
+
+    /// <summary>
+    /// 顶栏载入：把它设为窗口标题栏（拖拽区），并完成 VM 订阅与失焦隐藏接线。
+    /// 注意：标题栏只能覆盖顶栏这一块区域——若把整个 RootGrid 设为标题栏，
+    /// caption（非客户区）会拦截滚轮/滑动手势，页面内的 ScrollViewer 将无法滚动。
+    /// </summary>
+    private void PageTitleBar_Loaded(object sender, RoutedEventArgs e)
     {
+        ControlWindow controlWindow = ((App)App.Current).Host.Services.GetRequiredService<ControlWindow>();
+
+        try { controlWindow.SetTitleBar(PageTitleBar); }
+        catch { }
+
+        if (_wired) return;
+        _wired = true;
+
         VM.PropertyChanged += OnPropertyChanged;
 
-        ControlWindow controlWindow = ((App)App.Current).Host.Services.GetRequiredService<ControlWindow>();
         controlWindow.SetFocus();
 
         controlWindow.Activated += (_, args) =>
@@ -63,8 +77,12 @@ public sealed partial class ControlPage : Page
     {
         if (e.PropertyName == "Device")
         {
-            ControlPopup.IsOpen = VM.Device?.EnableControl ?? false;
-            VolumePopup.IsOpen = VM.Device?.EnableControl ?? false;
+            // 镜像徽标：避免 x:Load 绑定可空链 VM.Device.ShowMirrorIcon 导致 XamlCompiler 崩溃，
+            // 改为代码驱动 Visibility。
+            if (MirrorBadge != null)
+                MirrorBadge.Visibility = VM.Device?.ShowMirrorIcon == true
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
         }
     }
 }

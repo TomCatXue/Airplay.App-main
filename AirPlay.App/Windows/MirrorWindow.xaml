@@ -14,136 +14,301 @@
         <MicaBackdrop />
     </winuiex:WindowEx.SystemBackdrop>
 
-    <Grid x:Name="RootGrid" Unloaded="Grid_Unloaded">
+    <!-- 整窗底色统一为设备深色，避免"边框外一圈 Mica 褐色遮罩"；
+         圆角由系统 DWM 窗口圆角 + 屏幕区(ScreenBorder)适度圆角共同呈现。 -->
+    <Grid x:Name="RootGrid" Background="{ThemeResource DeviceBezelBrush}" Unloaded="Grid_Unloaded"
+          PointerPressed="RootGrid_PointerPressed" PointerMoved="RootGrid_PointerMoved" PointerReleased="RootGrid_PointerReleased">
         <Grid.Resources>
             <ThemeShadow x:Key="SharedShadow" />
         </Grid.Resources>
 
-        <Border
-            x:Name="Border"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch"
-            Loaded="Border_Loaded"
-            SizeChanged="Border_SizeChanged" />
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="LeftPanelColumn" Width="0" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        <Viewbox
-            x:Name="VideoViewbox"
-            HorizontalAlignment="Stretch"
-            Stretch="UniformToFill"
-            VerticalAlignment="Stretch">
-            <win2d:CanvasAnimatedControl
-                x:Name="Canvas"
-                CreateResources="Canvas_CreateResources"
-                Draw="Canvas_Draw"
-                Paused="True" />
-        </Viewbox>
-
-        <Popup
-            x:Name="Popup"
-            DesiredPlacement="Top"
-            LightDismissOverlayMode="Off"
-            PlacementTarget="{x:Bind Border}"
-            Shadow="{ThemeResource SharedShadow}"
-            ShouldConstrainToRootBounds="False"
-            Translation="0,0,32"
-            VerticalOffset="-8">
-            <Popup.Transitions>
-                <TransitionCollection>
-                    <PopupThemeTransition />
-                </TransitionCollection>
-            </Popup.Transitions>
-            <Popup.SystemBackdrop>
-                <DesktopAcrylicBackdrop />
-            </Popup.SystemBackdrop>
-            <Border
-                Padding="16,12"
-                BorderBrush="{ThemeResource ButtonBorderBrushPointerOver}"
-                BorderThickness="1"
-                CornerRadius="18">
-                <Grid Padding="8,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <FontIcon FontSize="16" Glyph="{x:Bind DeviceIcon}" />
-
-                    <StackPanel
-                        Grid.Column="2"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal"
-                        Spacing="8">
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            Style="{ThemeResource BaseTextBlockStyle}"
-                            Text="{x:Bind Session.DeviceDisplayName}"
-                            TextTrimming="CharacterEllipsis"
-                            TextWrapping="NoWrap" />
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            FontSize="12"
-                            Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                            Style="{ThemeResource CaptionTextBlockStyle}"
-                            Text="{x:Bind Session.DeviceModel}"
-                            TextTrimming="CharacterEllipsis"
-                            TextWrapping="NoWrap" />
+        <!-- 左侧竖直控制面板（大屏模式） -->
+        <Grid Grid.Column="0"
+              x:Name="LeftControlPanel"
+              Visibility="Collapsed"
+              Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+              BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+              BorderThickness="0,0,1,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Padding="18,20,18,18" Spacing="22">
+                    <!-- 设备信息 -->
+                    <StackPanel Spacing="6">
+                        <FontIcon HorizontalAlignment="Center"
+                                  FontSize="30"
+                                  Glyph="{x:Bind VM.Device.DeviceIcon, Mode=OneWay}" />
+                        <TextBlock HorizontalAlignment="Center"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Style="{ThemeResource BaseTextBlockStyle}"
+                                   Text="{x:Bind VM.Device.Session.DeviceDisplayName, Mode=OneWay}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock HorizontalAlignment="Center"
+                                   FontSize="12"
+                                   Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
+                                   Text="{x:Bind VM.Device.Session.DeviceModel, Mode=OneWay}"
+                                   TextTrimming="CharacterEllipsis" />
                     </StackPanel>
 
-                    <StackPanel
-                        Grid.Column="4"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal"
-                        Spacing="8">
-                        <TextBlock
-                            x:Name="FpsText"
-                            VerticalAlignment="Center"
-                            Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                            FontSize="11"
-                            FontFamily="Consolas"
-                            Text="0 FPS" />
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <StackPanel.Resources>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent" />
-                                    <Setter Property="BorderBrush" Value="Transparent" />
-                                    <Setter Property="BorderThickness" Value="0" />
-                                    <Setter Property="CornerRadius" Value="4" />
-                                </Style>
-                                <Style TargetType="FontIcon">
-                                    <Setter Property="FontSize" Value="10" />
-                                </Style>
-                            </StackPanel.Resources>
-                            <Button Click="MinimizeButton_Click" ToolTipService.ToolTip="最小化">
-                                <FontIcon Glyph="&#xE921;" />
+                    <!-- 传输控制 -->
+                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="14">
+                        <Button Width="48"
+                                Height="48"
+                                Padding="0"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Click="ControlButton_Click"
+                                CornerRadius="14"
+                                Tag="PrevItem"
+                                ToolTipService.ToolTip="上一首">
+                            <FontIcon FontSize="16" Glyph="&#xF8AC;" />
+                        </Button>
+                        <Button Width="48"
+                                Height="48"
+                                Padding="0"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Click="ControlButton_Click"
+                                CornerRadius="14"
+                                Tag="{x:Bind VM.Device.PlayPauseTag, Mode=OneWay}"
+                                ToolTipService.ToolTip="播放/暂停">
+                            <FontIcon FontSize="18" Glyph="{x:Bind VM.Device.PlayPauseIcon, Mode=OneWay}" />
+                        </Button>
+                        <Button Width="48"
+                                Height="48"
+                                Padding="0"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Click="ControlButton_Click"
+                                CornerRadius="14"
+                                Tag="NextItem"
+                                ToolTipService.ToolTip="下一首">
+                            <FontIcon FontSize="16" Glyph="&#xF8AD;" />
+                        </Button>
+                    </StackPanel>
+
+                    <!-- 音量 -->
+                    <StackPanel Spacing="10">
+                        <TextBlock FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Style="{ThemeResource BaseTextBlockStyle}"
+                                   Text="音量" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Button Width="40"
+                                    Height="40"
+                                    Padding="0"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Click="ControlButton_Click"
+                                    CornerRadius="12"
+                                    Tag="MuteToggle"
+                                    ToolTipService.ToolTip="静音">
+                                <FontIcon FontSize="15" Glyph="&#xE74F;" />
                             </Button>
-                            <Button Click="FullScreenButton_Click" ToolTipService.ToolTip="全屏">
-                                <FontIcon Glyph="&#xE740;" />
-                            </Button>
-                            <Button Click="CloseButton_Click" ToolTipService.ToolTip="断开">
-                                <FontIcon Glyph="&#xE8BB;" />
-                            </Button>
+                            <Slider Grid.Column="1"
+                                    Margin="10,0"
+                                    VerticalAlignment="Center"
+                                    IsEnabled="{x:Bind VM.Device.EnableControl, Mode=OneWay}"
+                                    Maximum="100"
+                                    Minimum="0"
+                                    Value="{x:Bind VM.Device.Volume, Mode=TwoWay}" />
+                            <TextBlock Grid.Column="2"
+                                       Width="34"
+                                       VerticalAlignment="Center"
+                                       Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
+                                       Text="{x:Bind FormatVolume(VM.Device.Volume), Mode=OneWay}"
+                                       TextAlignment="Right" />
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- 截图 -->
+                    <Button Height="42"
+                            Padding="12,0"
+                            HorizontalAlignment="Stretch"
+                            Click="ScreenshotButton_Click"
+                            CornerRadius="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon FontSize="15" Glyph="&#xE722;" />
+                            <TextBlock Text="截图当前画面" />
                         </StackPanel>
-                    </StackPanel>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
 
-                </Grid>
-            </Border>
-        </Popup>
+        <!-- 右侧：设备外框画面 + 顶部悬浮控制胶囊 -->
+        <Grid Grid.Column="1" x:Name="DeviceArea">
 
-        <ContentDialog
-            x:Name="ConfirmDialog"
-            Title="断开连接"
-            CloseButtonText="取消"
-            DefaultButton="Primary"
-            PrimaryButtonClick="ConfirmDialog_PrimaryButtonClick"
-            PrimaryButtonStyle="{ThemeResource AccentButtonStyle}"
-            PrimaryButtonText="断开"
-            Style="{ThemeResource DefaultContentDialogStyle}">
-            <TextBlock Text="关闭此窗口将断开与设备的连接，中断屏幕镜像和音频播放。" TextWrapping="WrapWholeWords" />
-        </ContentDialog>
+            <!-- 设备外框 + 视频（迷你形态下整体隐藏）。
+                 整窗深色(RootGrid)，此处仅做适度圆角裁切，不再额外堆一圈深色边框，
+                 因此不会有"褐色遮罩圈"。灵动岛/刘海按 iOS 比例叠加。 -->
+            <Grid x:Name="DeviceAreaGrid">
+                <Border x:Name="DeviceFrame"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Margin="0"
+                        Padding="0"
+                        Background="Transparent"
+                        CornerRadius="0">
+                    <Grid x:Name="ScreenHost">
+                        <Border x:Name="ScreenBorder" Background="{ThemeResource DeviceBezelBrush}" CornerRadius="22">
+                            <!-- 圆角裁剪：Border 的 CornerRadius 对子内容不保证裁剪，
+                                 因此显式用 RectangleGeometry 裁切视频层，
+                                 并在 SizeChanged/布局变化时同步 Rect 与半径，保证四角一致且跟随尺寸。 -->
+                            <Grid x:Name="ScreenClipHost" SizeChanged="ScreenClipHost_SizeChanged">
+                                <!-- 圆角裁剪在代码中用合成层实现（见 UpdateScreenClip）：
+                                     WinUI 的 RectangleGeometry 不支持圆角，
+                                     CompositionRoundedRectangleGeometry 才支持且边缘抗锯齿。 -->
+                                <!-- Canvas 以像素尺寸渲染，Viewbox 仅做等比缩放 -->
+                                <Viewbox x:Name="VideoViewbox" Stretch="Uniform">
+                                    <win2d:CanvasAnimatedControl x:Name="Canvas"
+                                                                 Width="1920"
+                                                                 Height="1080"
+                                                                 CreateResources="Canvas_CreateResources"
+                                                                 Draw="Canvas_Draw"
+                                                                 Paused="False" />
+                                </Viewbox>
+                                <!-- 刘海 / 灵动岛 挖孔（仅竖屏，按 iOS 比例对齐） -->
+                                <Border x:Name="Notch"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Top"
+                                        Background="Black"
+                                        CornerRadius="9"
+                                        Visibility="Collapsed" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <ContentDialog x:Name="ConfirmDialog"
+                           Title="断开连接"
+                           CloseButtonText="取消"
+                           DefaultButton="Primary"
+                           PrimaryButtonClick="ConfirmDialog_PrimaryButtonClick"
+                           PrimaryButtonStyle="{ThemeResource AccentButtonStyle}"
+                           PrimaryButtonText="断开"
+                           Style="{ThemeResource DefaultContentDialogStyle}">
+                <TextBlock Text="关闭此窗口将断开与设备的连接，中断屏幕镜像和音频播放。" TextWrapping="WrapWholeWords" />
+            </ContentDialog>
+
+            <ContentDialog x:Name="InfoDialog"
+                           Title="提示"
+                           CloseButtonText="确定"
+                           DefaultButton="Primary"
+                           Style="{ThemeResource DefaultContentDialogStyle}">
+                <TextBlock x:Name="InfoDialogText" TextWrapping="WrapWholeWords" />
+            </ContentDialog>
+
+            <!-- 顶部悬浮控制胶囊（8月13日版样式）：
+                 独立 Popup 悬浮于画面顶部中央，亚克力背景 + 胶囊圆角 + 阴影；
+                 拥有自己的窗口层，永远置顶，不会被视频/遮罩/全屏切换覆盖；
+                 ShouldConstrainToRootBounds=False 可超出窗口边界；
+                 LightDismissOverlayMode=Off 避免弹出时产生变暗蒙层。 -->
+            <Popup x:Name="ControlCapsule"
+                   DesiredPlacement="Top"
+                   IsLightDismissEnabled="False"
+                   LightDismissOverlayMode="Off"
+                   PlacementTarget="{x:Bind DeviceArea}"
+                   Shadow="{ThemeResource SharedShadow}"
+                   ShouldConstrainToRootBounds="False"
+                   Translation="0,0,32"
+                   VerticalOffset="6">
+                <Popup.Transitions>
+                    <TransitionCollection>
+                        <PopupThemeTransition />
+                    </TransitionCollection>
+                </Popup.Transitions>
+                <Popup.SystemBackdrop>
+                    <DesktopAcrylicBackdrop />
+                </Popup.SystemBackdrop>
+                <Border Padding="16,10"
+                        BorderBrush="{ThemeResource ButtonBorderBrushPointerOver}"
+                        BorderThickness="1"
+                        CornerRadius="18">
+                    <Grid Padding="8,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <FontIcon FontSize="16" Glyph="{x:Bind DeviceIcon}" />
+
+                        <StackPanel Grid.Column="2"
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+                            <TextBlock VerticalAlignment="Center"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Style="{ThemeResource BaseTextBlockStyle}"
+                                       Text="{x:Bind Session.DeviceDisplayName}"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="NoWrap" />
+                            <TextBlock VerticalAlignment="Center"
+                                       FontSize="12"
+                                       Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
+                                       Style="{ThemeResource CaptionTextBlockStyle}"
+                                       Text="{x:Bind Session.DeviceModel}"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="NoWrap" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="4"
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal"
+                                    Spacing="10">
+                            <TextBlock x:Name="FpsText"
+                                       VerticalAlignment="Center"
+                                       FontFamily="Consolas"
+                                       FontSize="11"
+                                       Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
+                                       Text="0 FPS" />
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <StackPanel.Resources>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="CornerRadius" Value="6" />
+                                    </Style>
+                                    <Style TargetType="FontIcon">
+                                        <Setter Property="FontSize" Value="12" />
+                                    </Style>
+                                </StackPanel.Resources>
+                                <Button Click="MinimizeButton_Click" ToolTipService.ToolTip="迷你形态">
+                                    <FontIcon x:Name="MinimizeIcon" Glyph="&#xE921;" />
+                                </Button>
+                                <Button x:Name="LargeScreenButton"
+                                        Click="LargeScreenButton_Click"
+                                        ToolTipService.ToolTip="大屏模式">
+                                    <FontIcon Glyph="&#xEC3C;" />
+                                </Button>
+                                <Button x:Name="FullScreenButton"
+                                        Click="FullScreenButton_Click"
+                                        ToolTipService.ToolTip="全屏">
+                                    <FontIcon Glyph="&#xE740;" />
+                                </Button>
+                                <Button Click="CloseButton_Click" ToolTipService.ToolTip="断开">
+                                    <FontIcon Glyph="&#xE8BB;" />
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Popup>
+        </Grid>
     </Grid>
 </winuiex:WindowEx>

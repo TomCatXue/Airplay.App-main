@@ -364,3 +364,10 @@ FodyWeavers.xsd
 
 /.vscode/launch.json
 /.vscode/tasks.json
+
+# 本地构建凭据（不要提交）
+Directory.Build.props
+Directory.Build.targets
+
+# WorkBuddy 会话记忆（本地草稿，含历史命令）
+/.workbuddy/

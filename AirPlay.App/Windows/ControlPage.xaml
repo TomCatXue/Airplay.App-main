@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="AirPlay.App.Windows.ControlPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -9,324 +9,275 @@
     xmlns:model="using:AirPlay.App.Models"
     mc:Ignorable="d">
 
-    <Grid Loaded="Grid_Loaded">
-        <Grid.Resources>
-            <ThemeShadow x:Name="SharedShadow" />
-        </Grid.Resources>
+    <Grid Background="Transparent">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-        <ListView
-            x:Name="ListView"
-            Margin="8"
-            ItemsSource="{x:Bind VM.Devices}"
-            SelectedItem="{x:Bind VM.Device, Mode=TwoWay}">
-            <ListView.ItemTemplate>
-                <DataTemplate x:DataType="model:Device">
-                    <Grid Padding="12,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <FontIcon FontSize="20" Glyph="{x:Bind DeviceIcon}" />
-
-                        <StackPanel Grid.Column="2" Spacing="2">
-                            <TextBlock
-                                FontSize="14"
-                                FontWeight="SemiBold"
-                                Style="{ThemeResource BaseTextBlockStyle}"
-                                Text="{x:Bind Session.DeviceDisplayName}"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="NoWrap" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                                Style="{ThemeResource CaptionTextBlockStyle}"
-                                Text="{x:Bind Session.DeviceModel}"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="NoWrap" />
-                        </StackPanel>
-
-                        <StackPanel
-                            Grid.Column="3"
-                            Orientation="Horizontal"
-                            Spacing="16">
-                            <FontIcon
-                                x:Name="VolumeIcon"
-                                x:Load="{x:Bind ShowVolumeIcon, Mode=OneWay}"
-                                Glyph="&#xf61f;" />
-                            <FontIcon
-                                x:Name="MirrorIcon"
-                                x:Load="{x:Bind ShowMirrorIcon, Mode=OneWay}"
-                                Glyph="&#xE7C4;" />
-                        </StackPanel>
-                    </Grid>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
-
-        <StackPanel
-            x:Name="EmptyInfo"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            x:Load="{x:Bind VM.ShowNoDevice, Mode=OneWay}"
-            Spacing="10">
-            <FontIcon
-                FontSize="56"
-                Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                Glyph="&#xe70a;" />
-            <StackPanel>
+        <!-- 顶部：拖拽区 + 标题 + 设置 -->
+        <Grid x:Name="PageTitleBar"
+              Grid.Row="0"
+              Height="44"
+              Padding="16,0,8,0"
+              Loaded="PageTitleBar_Loaded">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                <FontIcon FontSize="14" Glyph="&#xE7F4;" />
                 <TextBlock
-                    HorizontalAlignment="Center"
-                    FontSize="18"
+                    VerticalAlignment="Center"
+                    FontSize="13"
                     FontWeight="SemiBold"
-                    Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                    Style="{ThemeResource BaseTextBlockStyle}"
-                    Text="未连接设备" />
-                <TextBlock
-                    FontSize="12"
-                    Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                    Text="已连接的设备会显示在这里" />
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                    Text="AirPlay" />
             </StackPanel>
-        </StackPanel>
+            <Button
+                Grid.Column="2"
+                Width="32"
+                Height="32"
+                Padding="0"
+                VerticalAlignment="Center"
+                Background="Transparent"
+                BorderThickness="0"
+                Click="SettingsButton_Click"
+                CornerRadius="8"
+                ToolTipService.ToolTip="设置">
+                <FontIcon FontSize="14" Glyph="&#xE713;" />
+            </Button>
+        </Grid>
 
-        <Button
-            Width="32"
-            Height="32"
-            Margin="0,8,8,0"
-            Padding="0"
-            HorizontalAlignment="Right"
-            VerticalAlignment="Top"
-            Background="Transparent"
-            BorderBrush="Transparent"
-            BorderThickness="0"
-            Click="SettingsButton_Click"
-            CornerRadius="6"
-            ToolTipService.ToolTip="设置">
-            <FontIcon FontSize="14" Glyph="&#xE713;" />
-        </Button>
+        <!-- 媒体卡：专辑封面 + 曲目信息 + 播放控制 -->
+        <Border
+            Grid.Row="1"
+            Margin="16,0,16,12"
+            Padding="14"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-        <Popup
-            x:Name="ControlPopup"
-            DesiredPlacement="Bottom"
-            HorizontalOffset="-16"
-            LightDismissOverlayMode="Off"
-            PlacementTarget="{x:Bind ListView}"
-            Shadow="{ThemeResource SharedShadow}"
-            ShouldConstrainToRootBounds="False"
-            Translation="0,0,32"
-            VerticalOffset="8">
-            <Popup.Transitions>
-                <TransitionCollection>
-                    <PopupThemeTransition />
-                </TransitionCollection>
-            </Popup.Transitions>
-            <Popup.SystemBackdrop>
-                <DesktopAcrylicBackdrop />
-            </Popup.SystemBackdrop>
-            <Border
-                Grid.Row="2"
-                Width="388"
-                Margin="16"
-                Padding="12"
-                BorderBrush="{ThemeResource ButtonBorderBrushPointerOver}"
-                BorderThickness="1"
-                CornerRadius="18"
-                Translation="0,0,128">
-
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <Border
-                        Width="48"
-                        Height="48"
-                        BorderBrush="{ThemeResource IconBorder}"
-                        BorderThickness="2"
-                        CornerRadius="4">
-                        <Border CornerRadius="4">
+                <!-- 封面 -->
+                <Border
+                    Width="56"
+                    Height="56"
+                    Background="{ThemeResource ControlStrongFillColorDefaultBrush}"
+                    CornerRadius="8">
+                    <Border CornerRadius="8">
+                        <Grid>
                             <Image
-                                Width="48"
-                                Height="48"
-                                Source="{x:Bind VM.Device.Cover, Mode=OneWay}" />
-                        </Border>
-                    </Border>
-
-                    <FontIcon
-                        x:Name="MirrorIcon"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        x:Load="{x:Bind VM.Device.Session.IsMirrorSession, Mode=OneWay}"
-                        FontSize="24"
-                        Glyph="&#xE7C4;" />
-
-                    <StackPanel
-                        Grid.Column="1"
-                        Margin="8,0"
-                        VerticalAlignment="Center">
-                        <TextBlock
-                            Margin="0,-2,0,0"
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            Style="{ThemeResource BaseTextBlockStyle}"
-                            Text="{x:Bind VM.Device.PlayingItemName, Mode=OneWay}"
-                            TextTrimming="CharacterEllipsis"
-                            TextWrapping="NoWrap" />
-                        <TextBlock
-                            Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                            Style="{ThemeResource CaptionTextBlockStyle}"
-                            Text="{x:Bind VM.Device.Artist, Mode=OneWay}"
-                            TextTrimming="CharacterEllipsis"
-                            TextWrapping="NoWrap"
-                            Visibility="Collapsed" />
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                                Style="{ThemeResource CaptionTextBlockStyle}"
-                                Text="{x:Bind VM.Device.Session.DeviceModel, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="NoWrap" />
+                                Width="56"
+                                Height="56"
+                                Source="{x:Bind VM.Device.Cover, Mode=OneWay}"
+                                Stretch="UniformToFill" />
                             <FontIcon
-                                Margin="0,2,0,0"
+                                HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                FontSize="10"
-                                Glyph="&#xEA62;" />
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                                Style="{ThemeResource CaptionTextBlockStyle}"
-                                Text="AirPlay"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="NoWrap" />
-                        </StackPanel>
-                    </StackPanel>
+                                FontSize="24"
+                                Glyph="&#xE7C4;"
+                                x:Name="MirrorBadge"
+                                Visibility="Collapsed" />
+                        </Grid>
+                    </Border>
+                </Border>
 
-                    <ContentControl
-                        Grid.Column="3"
-                        Padding="8"
+                <!-- 曲目信息 -->
+                <StackPanel Grid.Column="1" Margin="12,0,8,0" VerticalAlignment="Center" Spacing="3">
+                    <TextBlock
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        Text="{x:Bind VM.Device.PlayingItemName, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis"
+                        TextWrapping="NoWrap" />
+                    <TextBlock
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind VM.Device.DisplaySubtitle, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis"
+                        TextWrapping="NoWrap" />
+                    <TextBlock
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind VM.Device.Album, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis"
+                        TextWrapping="NoWrap" />
+                </StackPanel>
+
+                <!-- 播放控制 -->
+                <StackPanel
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="2">
+                    <StackPanel.Resources>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Width" Value="36" />
+                            <Setter Property="Height" Value="36" />
+                            <Setter Property="CornerRadius" Value="18" />
+                        </Style>
+                    </StackPanel.Resources>
+                    <Button Click="ControlButton_Click" IsEnabled="{x:Bind VM.Device.EnableControl, Mode=OneWay}" Tag="PrevItem" ToolTipService.ToolTip="上一首">
+                        <FontIcon FontSize="14" Glyph="&#xF8AC;" />
+                    </Button>
+                    <Button Click="ControlButton_Click" IsEnabled="{x:Bind VM.Device.EnableControl, Mode=OneWay}" Tag="{x:Bind VM.Device.PlayPauseTag, Mode=OneWay}" ToolTipService.ToolTip="播放/暂停">
+                        <FontIcon FontSize="16" Glyph="{x:Bind VM.Device.PlayPauseIcon, Mode=OneWay}" />
+                    </Button>
+                    <Button Click="ControlButton_Click" IsEnabled="{x:Bind VM.Device.EnableControl, Mode=OneWay}" Tag="NextItem" ToolTipService.ToolTip="下一首">
+                        <FontIcon FontSize="14" Glyph="&#xF8AD;" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 音量条 -->
+        <Border
+            Grid.Row="2"
+            Margin="16,0,16,12"
+            Padding="14,8"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button
+                    Grid.Column="0"
+                    Width="32"
+                    Height="32"
+                    Padding="0"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Click="ControlButton_Click"
+                    CornerRadius="16"
+                    Tag="MuteToggle"
+                    ToolTipService.ToolTip="静音">
+                    <FontIcon FontSize="14" Glyph="&#xE74F;" />
+                </Button>
+                <Slider
+                    Grid.Column="1"
+                    Margin="12,0"
+                    VerticalAlignment="Center"
+                    IsEnabled="{x:Bind VM.Device.EnableControl, Mode=OneWay}"
+                    Maximum="100"
+                    Minimum="0"
+                    Value="{x:Bind VM.Device.Volume, Mode=TwoWay}" />
+                <TextBlock
+                    Grid.Column="2"
+                    MinWidth="28"
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{x:Bind VM.Device.VolumeText, Mode=OneWay}"
+                    TextAlignment="Right" />
+            </Grid>
+        </Border>
+
+        <!-- 设备列表 -->
+        <Grid Grid.Row="3">
+            <ListView
+                x:Name="ListView"
+                Margin="16,0,16,16"
+                ItemsSource="{x:Bind VM.Devices}"
+                SelectedItem="{x:Bind VM.Device, Mode=TwoWay}">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0,2" />
+                        <Setter Property="CornerRadius" Value="10" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="model:Device">
+                        <Grid Padding="12,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="14" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <FontIcon FontSize="18" Glyph="{x:Bind DeviceIcon}" />
+
+                            <StackPanel Grid.Column="2" Spacing="2">
+                                <TextBlock
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                    Text="{x:Bind Session.DeviceDisplayName}"
+                                    TextTrimming="CharacterEllipsis"
+                                    TextWrapping="NoWrap" />
+                                <TextBlock
+                                    FontSize="11"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{x:Bind Session.DeviceModel}"
+                                    TextTrimming="CharacterEllipsis"
+                                    TextWrapping="NoWrap" />
+                            </StackPanel>
+
+                            <StackPanel
+                                Grid.Column="3"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="12">
+                                <FontIcon
+                                    x:Name="VolumeIcon"
+                                    x:Load="{x:Bind ShowVolumeIcon, Mode=OneWay}"
+                                    FontSize="12"
+                                    Glyph="&#xf61f;" />
+                                <FontIcon
+                                    x:Name="MirrorIcon"
+                                    x:Load="{x:Bind ShowMirrorIcon, Mode=OneWay}"
+                                    FontSize="12"
+                                    Glyph="&#xE7C4;" />
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <StackPanel
+                x:Name="EmptyInfo"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                x:Load="{x:Bind VM.ShowNoDevice, Mode=OneWay}"
+                Spacing="10">
+                <FontIcon
+                    FontSize="48"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Glyph="&#xe70a;" />
+                <StackPanel>
+                    <TextBlock
                         HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        IsEnabled="{x:Bind VM.Device.EnableControl, Mode=OneWay}">
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <StackPanel.Resources>
-                                <Style TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent" />
-                                    <Setter Property="BorderBrush" Value="Transparent" />
-                                    <Setter Property="BorderThickness" Value="0" />
-                                    <Setter Property="CornerRadius" Value="4" />
-                                </Style>
-                                <Style TargetType="FontIcon">
-                                    <Setter Property="FontSize" Value="14" />
-                                </Style>
-                            </StackPanel.Resources>
-                            <Button Click="ControlButton_Click" Tag="PrevItem">
-                                <FontIcon Glyph="&#xF8AC;" />
-                            </Button>
-                            <Button Click="ControlButton_Click" Tag="{x:Bind VM.Device.PlayPauseTag, Mode=OneWay}">
-                                <FontIcon Glyph="{x:Bind VM.Device.PlayPauseIcon, Mode=OneWay}" />
-                            </Button>
-                            <Button Click="ControlButton_Click" Tag="NextItem">
-                                <FontIcon Glyph="&#xF8AD;" />
-                            </Button>
-                        </StackPanel>
-                    </ContentControl>
-
-                    <StackPanel
-                        Grid.Row="1"
-                        Grid.ColumnSpan="3"
-                        Margin="8,8,8,0"
-                        Padding="8,8,8,0"
-                        Spacing="2"
-                        BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
-                        BorderThickness="0,1,0,0">
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                                Text="{x:Bind VM.Device.Artist, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="NoWrap" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                                Text="·" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
-                                Text="{x:Bind VM.Device.Album, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis"
-                                TextWrapping="NoWrap" />
-                        </StackPanel>
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </Popup>
-
-        <Popup
-            x:Name="VolumePopup"
-            DesiredPlacement="Bottom"
-            HorizontalOffset="-16"
-            LightDismissOverlayMode="Off"
-            PlacementTarget="{x:Bind ListView}"
-            Shadow="{ThemeResource SharedShadow}"
-            ShouldConstrainToRootBounds="False"
-            Translation="0,0,32"
-            VerticalOffset="80">
-            <Popup.Transitions>
-                <TransitionCollection>
-                    <PopupThemeTransition />
-                </TransitionCollection>
-            </Popup.Transitions>
-            <Popup.SystemBackdrop>
-                <DesktopAcrylicBackdrop />
-            </Popup.SystemBackdrop>
-            <Border
-                Grid.Row="2"
-                Width="388"
-                Margin="16"
-                Padding="16,4"
-                BorderBrush="{ThemeResource ButtonBorderBrushPointerOver}"
-                BorderThickness="1"
-                CornerRadius="18"
-                Translation="0,0,128">
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <FontIcon
-                        Grid.Column="0"
-                        FontSize="16"
-                        Glyph="&#xE992;" />
-
-                    <Slider
-                        Grid.Column="1"
-                        Margin="16,0"
-                        HorizontalAlignment="Stretch"
-                        Maximum="100"
-                        Minimum="0"
-                        SmallChange="6"
-                        StepFrequency="6"
-                        Value="{x:Bind VM.Device.Volume, Mode=TwoWay}" />
-
-                    <FontIcon
-                        Grid.Column="2"
-                        FontSize="16"
-                        Glyph="&#xE995;" />
-                </Grid>
-            </Border>
-        </Popup>
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="未连接设备" />
+                    <TextBlock
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="已连接的设备会显示在这里" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Page>

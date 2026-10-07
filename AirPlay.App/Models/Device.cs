@@ -66,6 +66,16 @@ public partial class Device : ObservableObject
     [ObservableProperty]
     public partial double Volume { get; set; }
 
+    /// <summary>镜像会话的投屏分辨率（如 740×1600），无曲目元数据时显示在卡片第二行。</summary>
+    [ObservableProperty]
+    public partial string? MirrorResolution { get; set; }
+
+    /// <summary>卡片第二行：有曲目元数据显示艺术家；镜像会话无元数据时显示投屏分辨率。</summary>
+    public string? DisplaySubtitle => !string.IsNullOrEmpty(Artist) ? Artist : MirrorResolution;
+
+    /// <summary>音量整数文本，供 UI 绑定显示（避免 x:Bind 函数绑定可空链崩溃）。</summary>
+    public string VolumeText => Math.Round(Volume).ToString();
+
     [ObservableProperty]
     public partial MediaPlaybackStatus PlaybackStatus { get; set; }
 
@@ -73,7 +83,8 @@ public partial class Device : ObservableObject
     {
         Session = deviceSession;
         EnableControl = deviceSession.DacpServiceEndPoint != null;
-        PlayingItemName = deviceSession.IsMirrorSession ? "Mirroring" : "Audio";
+        // 镜像会话拿不到曲目元数据（iOS 投屏时不下发），显示"正在投屏"
+        PlayingItemName = deviceSession.IsMirrorSession ? "正在投屏" : "Audio";
         Volume = deviceSession.Volume;
 
         deviceSession.AudioControllerCreated += OnAudioControllerCreated;
@@ -96,9 +107,32 @@ public partial class Device : ObservableObject
     {
         if (Session.Volume == value) return;
         _setVolumeAction(value);
+        OnPropertyChanged(nameof(VolumeText));
     }
 
-    private void OnMirrorControllerCreated(object? sender, EventArgs e) => App.DispatcherQueue.TryEnqueue(() => ShowMirrorIcon = true);
+    partial void OnArtistChanged(string? value) => OnPropertyChanged(nameof(DisplaySubtitle));
+
+    private void OnMirrorControllerCreated(object? sender, EventArgs e) => App.DispatcherQueue.TryEnqueue(() =>
+    {
+        ShowMirrorIcon = true;
+
+        // 订阅投屏分辨率变化，无曲目元数据时卡片显示"投屏中 740×1600"
+        if (Session.MirrorController is { } mirrorController)
+        {
+            mirrorController.FrameSizeChanged += OnMirrorFrameSizeChanged;
+            if (mirrorController.FrameSize is { } fs)
+                UpdateMirrorResolution(fs);
+        }
+    });
+
+    private void OnMirrorFrameSizeChanged(object? sender, System.Drawing.Size e) =>
+        App.DispatcherQueue.TryEnqueue(() => UpdateMirrorResolution(e));
+
+    private void UpdateMirrorResolution(System.Drawing.Size size)
+    {
+        MirrorResolution = $"{size.Width}×{size.Height}";
+        OnPropertyChanged(nameof(DisplaySubtitle));
+    }
 
     private void OnMirrorControllerClosed(object? sender, EventArgs e) => App.DispatcherQueue.TryEnqueue(() => ShowMirrorIcon = false);
 
@@ -113,19 +147,22 @@ public partial class Device : ObservableObject
             lastReceiveData = DateTime.Now;
             bool value = e.Data.Any(b => b != 0);
 
-            PlaybackStatus = e.Data.Any(b => b != 0)
-                ? MediaPlaybackStatus.Playing
-                : MediaPlaybackStatus.Paused;
-
-            if (ShowVolumeIcon != value)
+            // 所有绑定属性与 SMTC 相关状态都必须在 UI 线程更新，
+            // 否则 SmtcControlService 在后台线程设置 SystemMediaTransportControls
+            // 会抛出跨线程 COMException。
+            App.DispatcherQueue.TryEnqueue(() =>
             {
-                App.DispatcherQueue.TryEnqueue(() =>
+                PlaybackStatus = value
+                    ? MediaPlaybackStatus.Playing
+                    : MediaPlaybackStatus.Paused;
+
+                if (ShowVolumeIcon != value)
                 {
                     ShowVolumeIcon = value;
                     PlayPauseTag = value ? "Pause" : "Play";
                     PlayPauseIcon = value ? "\uf8ae" : "\uf5b0";
-                });
-            }
+                }
+            });
         };
 
         if (Session.IsMirrorSession)
@@ -149,10 +186,9 @@ public partial class Device : ObservableObject
 
                     if (lastReceiveData != null && DateTime.Now - lastReceiveData > timeSpan && ShowVolumeIcon != false)
                     {
-                        PlaybackStatus = MediaPlaybackStatus.Paused;
-
                         App.DispatcherQueue.TryEnqueue(() =>
                         {
+                            PlaybackStatus = MediaPlaybackStatus.Paused;
                             ShowVolumeIcon = false;
                             PlayPauseTag = "Play";
                             PlayPauseIcon = "\uf5b0";

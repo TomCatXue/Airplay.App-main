@@ -1,0 +1,302 @@
+diff --git a/docs/DEVICE_CORNER_PROFILES.md b/docs/DEVICE_CORNER_PROFILES.md
+index 4522321..f09c130 100644
+--- a/docs/DEVICE_CORNER_PROFILES.md
++++ b/docs/DEVICE_CORNER_PROFILES.md
+@@ -18,6 +18,17 @@ exponent drives an anti-aliased superellipse in the D3D11 pixel shader. The WPF
+ fallback uses the closest circular Win32 region because `CreateRoundRectRgn`
+ cannot represent a continuous superellipse.
+ 
++## Preview aspect
++
++Each profile also carries its device family's native portrait panel
++resolution. `DeviceCornerProfileResolver.ResolveScreenSize` returns the
++device-reported stream geometry when a frame already exists, and otherwise the
++ProductType family's panel, so a preview window starts at the real device
++screen ratio instead of one hard-coded phone shape. Senders with no device
++screen (Apple TV, video-app casting) report no size and keep the historical
++default. The D3D11 renderer always letterboxes to the decoded frame aspect, so
++the picture is never cropped or stretched whatever the window ratio is.
++
+ ## Accuracy boundary
+ 
+ Apple's technical specifications state whether a particular display has
+diff --git a/src/App.Logic.Tests/Program.cs b/src/App.Logic.Tests/Program.cs
+index c1000db..8c128a8 100644
+--- a/src/App.Logic.Tests/Program.cs
++++ b/src/App.Logic.Tests/Program.cs
+@@ -3931,6 +3931,42 @@ Equal("rectangular",
+ Equal(0, DeviceCornerProfile.Rectangular.GetGdiRadius(1206),
+     "rectangular fallback radius");
+ 
++// The preview ratio is seeded from the same family dispatch: exact stream
++// geometry when the sender already reported it, otherwise the ProductType
++// family's native panel. Without either, the caller keeps its own default.
++static string Size((uint Width, uint Height) value) => $"{value.Width}x{value.Height}";
++Equal("1206x2622", Size(DeviceCornerProfileResolver.ResolveScreenSize("iPhone18,3")),
++    "iPhone 17 family seeds its native panel");
++Equal("1080x2340", Size(DeviceCornerProfileResolver.ResolveScreenSize("iPhone13,1")),
++    "iPhone 12 mini seeds its native panel");
++Equal("1284x2778", Size(DeviceCornerProfileResolver.ResolveScreenSize("iPhone14,2")),
++    "iPhone 13 Pro Max seeds its native panel");
++Equal("750x1334", Size(DeviceCornerProfileResolver.ResolveScreenSize("iPhone10,1")),
++    "rectangular iPhone 8 still reports its 16:9-class panel");
++Equal("750x1334", Size(DeviceCornerProfileResolver.ResolveScreenSize("iPhone14,6")),
++    "iPhone SE 3 still reports its 16:9-class panel");
++Equal("1125x2436", Size(DeviceCornerProfileResolver.ResolveScreenSize("iPhone10,3")),
++    "iPhone X seeds its native panel");
++Equal("1488x2266", Size(DeviceCornerProfileResolver.ResolveScreenSize("iPad14,1")),
++    "iPad mini seeds its tablet ratio, not a phone ratio");
++Equal("1668x2388", Size(DeviceCornerProfileResolver.ResolveScreenSize("iPad8,1")),
++    "2018 iPad Pro seeds its tablet ratio");
++Equal("1620x2160", Size(DeviceCornerProfileResolver.ResolveScreenSize("iPad12,1")),
++    "Home-button iPad keeps its 3:4 panel");
++Equal("0x0", Size(DeviceCornerProfileResolver.ResolveScreenSize("AppleTV6,2")),
++    "Apple TV reports no device screen to seed from");
++Equal("0x0", Size(DeviceCornerProfileResolver.ResolveScreenSize(null, 0, 0)),
++    "no ProductType and no frame keeps the caller default");
++Equal("1640x2360", Size(DeviceCornerProfileResolver.ResolveScreenSize(null, 1640, 2360)),
++    "no ProductType falls back to the reported frame geometry");
++Equal("2360x1640", Size(DeviceCornerProfileResolver.ResolveScreenSize(null, 2360, 1640)),
++    "the frame fallback follows rotation");
++Equal("1170x2532", Size(DeviceCornerProfileResolver.ResolveScreenSize("iPhone18,3", 1170, 2532)),
++    "reported stream geometry wins over the family stand-in");
++Equal(true, Math.Abs(DeviceCornerProfileResolver.Resolve("iPad14,1").ScreenAspect -
++        DeviceCornerProfileResolver.Resolve("iPhone18,3").ScreenAspect) > 0.15,
++    "tablet and phone families no longer share one preview ratio");
++
+ Equal("iPhoneMirror AirPlay",
+     WirelessReceiverConfiguration.SanitizeReceiverName("  iPhoneMirror AirPlay  "),
+     "wireless receiver name is trimmed");
+diff --git a/src/App/MainWindow.xaml.cs b/src/App/MainWindow.xaml.cs
+index fa7368f..bba6aad 100644
+--- a/src/App/MainWindow.xaml.cs
++++ b/src/App/MainWindow.xaml.cs
+@@ -2413,12 +2413,27 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
+         MainContentGrid.UpdateLayout();
+     }
+ 
++    /// <summary>
++    /// Aspect the lightweight preview frame should present at. The device's own
++    /// reported stream geometry wins; the ProductType family's native panel is
++    /// the stand-in before any frame arrives, so an iPad no longer starts in a
++    /// phone-shaped frame. The historical constant stays as the last resort for
++    /// senders without a device screen (Apple TV, non-mobile casting).
++    /// </summary>
++    private double GetLightweightPreviewAspect()
++    {
++        var (width, height) = DeviceCornerProfileResolver.ResolveScreenSize(
++            _viewModel.SelectedDevice?.ProductType,
++            _viewModel.SourceVideoWidth,
++            _viewModel.SourceVideoHeight);
++        return width != 0 && height != 0
++            ? (double)width / height
++            : LightweightDefaultPreviewAspect;
++    }
++
+     private double GetInitialLightweightPreviewWidth(double maximumPreviewWidth)
+     {
+-        var aspect = _viewModel.SourceVideoWidth != 0 &&
+-            _viewModel.SourceVideoHeight != 0
+-            ? (double)_viewModel.SourceVideoWidth / _viewModel.SourceVideoHeight
+-            : LightweightDefaultPreviewAspect;
++        var aspect = GetLightweightPreviewAspect();
+         var preferredWidth = Math.Max(LightweightMinimumPreviewWidth,
+             Math.Round(Math.Max(520, PreviewPanel.ActualHeight) * aspect));
+         return Math.Min(preferredWidth, maximumPreviewWidth);
+@@ -5924,10 +5939,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
+                 chromeWidth);
+             var hasContentPreviewWidth = TryGetLightweightContentPreviewWidth(
+                 maximumPreviewWidth, out var contentPreviewWidth);
+-            var aspect = _viewModel.SourceVideoWidth != 0 &&
+-                _viewModel.SourceVideoHeight != 0
+-                ? (double)_viewModel.SourceVideoWidth / _viewModel.SourceVideoHeight
+-                : LightweightDefaultPreviewAspect;
++            var aspect = GetLightweightPreviewAspect();
+             var previewHeight = Math.Max(520, PreviewPanel.ActualHeight);
+             var preferredPreviewWidth = hasContentPreviewWidth
+                 ? contentPreviewWidth
+diff --git a/src/App/Models/DeviceCornerProfile.cs b/src/App/Models/DeviceCornerProfile.cs
+index 0d2967e..1193f44 100644
+--- a/src/App/Models/DeviceCornerProfile.cs
++++ b/src/App/Models/DeviceCornerProfile.cs
+@@ -5,16 +5,34 @@ namespace IPhoneMirror.App.Models;
+ /// pixels so the same curve follows window resize, source rotation and local
+ /// render-size presets.
+ /// </summary>
++/// <remarks>
++/// <see cref="ScreenWidth"/> and <see cref="ScreenHeight"/> are the real
++/// panel resolution of the device family this fit was selected for, always in
++/// portrait order. They are the only pixel figures carried here, and they let
++/// the preview window adopt the true device screen ratio before a decoded
++/// frame arrives. Values are 0 when the family has no phone/tablet screen (for
++/// example Apple TV) or when the fit came from an ambiguous fallback.
++/// </remarks>
+ internal readonly record struct DeviceCornerProfile(
+     string Id,
+     bool IsRounded,
+     double RadiusRatio,
+     double CurveExponent,
+-    double GdiRadiusRatio)
++    double GdiRadiusRatio,
++    uint ScreenWidth = 0,
++    uint ScreenHeight = 0)
+ {
+     internal static readonly DeviceCornerProfile Rectangular = new(
+         "rectangular", false, 0.0, 2.0, 0.0);
+ 
++    /// <summary>True when this family carries a usable native screen size.</summary>
++    internal bool HasScreenSize => ScreenWidth != 0 && ScreenHeight != 0;
++
++    /// <summary>Screen ratio (short edge / long edge) of the native panel.</summary>
++    internal double ScreenAspect => !HasScreenSize
++        ? 0.0
++        : Math.Min(ScreenWidth, ScreenHeight) / (double)Math.Max(ScreenWidth, ScreenHeight);
++
+     /// <summary>Radius in pixels for a short edge of <paramref name="shortEdge"/> pixels.</summary>
+     internal int GetGdiRadius(int shortEdge, double dpiScale = 1.0)
+     {
+diff --git a/src/App/Services/DeviceCornerProfileResolver.cs b/src/App/Services/DeviceCornerProfileResolver.cs
+index 8cf5230..b26809b 100644
+--- a/src/App/Services/DeviceCornerProfileResolver.cs
++++ b/src/App/Services/DeviceCornerProfileResolver.cs
+@@ -15,28 +15,44 @@ internal static class DeviceCornerProfileResolver
+     // does not publish a numeric display corner radius. Keep the constants in
+     // one place so a future official bezel can be calibrated without touching
+     // renderer/window code.
++    // Every fit also carries the native portrait panel resolution of its device
++    // family so the preview window can start at the real device screen ratio
++    // instead of one hard-coded phone shape. Like the curve coefficients, the
++    // dimensions are family representatives: an 11-inch and a 13-inch iPad Pro
++    // share one fit, so the value is the common 11-inch class and the decoded
++    // frame geometry takes over as soon as the stream reports real pixels.
++    // Apple publishes these panel resolutions in its technical specifications.
+     internal static readonly DeviceCornerProfile IPhoneX = new(
+-        "iphone-x", true, 0.1460, 2.15, 0.1320);
++        "iphone-x", true, 0.1460, 2.15, 0.1320, 1125, 2436);
+     internal static readonly DeviceCornerProfile IPhoneNotch = new(
+-        "iphone-notch", true, 0.1580, 2.25, 0.1420);
++        "iphone-notch", true, 0.1580, 2.25, 0.1420, 1170, 2532);
+     internal static readonly DeviceCornerProfile IPhone12Mini = new(
+-        "iphone-12-mini", true, 0.1180, 2.18, 0.1080);
++        "iphone-12-mini", true, 0.1180, 2.18, 0.1080, 1080, 2340);
+     internal static readonly DeviceCornerProfile IPhone13Mini = new(
+-        "iphone-13-mini", true, 0.1240, 2.20, 0.1130);
++        "iphone-13-mini", true, 0.1240, 2.20, 0.1130, 1080, 2340);
+     internal static readonly DeviceCornerProfile IPhone12Standard = new(
+-        "iphone-12-standard", true, 0.1390, 2.22, 0.1260);
++        "iphone-12-standard", true, 0.1390, 2.22, 0.1260, 1170, 2532);
+     internal static readonly DeviceCornerProfile IPhone12Max = new(
+-        "iphone-12-max", true, 0.1320, 2.22, 0.1200);
++        "iphone-12-max", true, 0.1320, 2.22, 0.1200, 1284, 2778);
+     internal static readonly DeviceCornerProfile IPhoneDynamicIsland = new(
+-        "iphone-dynamic-island", true, 0.1784, 2.36, 0.1583);
++        "iphone-dynamic-island", true, 0.1784, 2.36, 0.1583, 1206, 2622);
+     internal static readonly DeviceCornerProfile IPadPro = new(
+-        "ipad-pro-rounded", true, 0.0430, 2.12, 0.0390);
++        "ipad-pro-rounded", true, 0.0430, 2.12, 0.0390, 1668, 2388);
+     internal static readonly DeviceCornerProfile IPadAir = new(
+-        "ipad-air-rounded", true, 0.0390, 2.08, 0.0360);
++        "ipad-air-rounded", true, 0.0390, 2.08, 0.0360, 1640, 2360);
+     internal static readonly DeviceCornerProfile IPadMini = new(
+-        "ipad-mini-rounded", true, 0.0520, 2.12, 0.0470);
++        "ipad-mini-rounded", true, 0.0520, 2.12, 0.0470, 1488, 2266);
+     internal static readonly DeviceCornerProfile IPadBase = new(
+-        "ipad-rounded", true, 0.0380, 2.08, 0.0350);
++        "ipad-rounded", true, 0.0380, 2.08, 0.0350, 1640, 2360);
++
++    // Home-button displays share one rectangular fit but not one aspect ratio:
++    // an iPhone 8 is roughly 0.56 while an iPad 9 is roughly 0.75. Keep the
++    // same "rectangular" id and zero radius, and only vary the screen size so
++    // caller behaviour that reads Id or IsRounded is unchanged.
++    private static readonly DeviceCornerProfile RectangularIPhone = new(
++        "rectangular", false, 0.0, 2.0, 0.0, 750, 1334);
++    private static readonly DeviceCornerProfile RectangularIPad = new(
++        "rectangular", false, 0.0, 2.0, 0.0, 1620, 2160);
+ 
+     private static readonly HashSet<(int Major, int Minor)> RectangularIPhones =
+     [
+@@ -70,16 +86,36 @@ internal static class DeviceCornerProfileResolver
+         return ResolveByGeometry(frameWidth, frameHeight);
+     }
+ 
++    /// <summary>
++    /// Resolves the pixel geometry a preview should present at, sharing the
++    /// device-family dispatch above. The device's own reported frame geometry
++    /// wins because it is exact and already follows rotation; the ProductType
++    /// family's native screen size is the stand-in used before any frame
++    /// arrives. Returns (0,0) when neither is known, which leaves the caller's
++    /// historical default in place.
++    /// </summary>
++    internal static (uint Width, uint Height) ResolveScreenSize(
++        string? productType,
++        uint frameWidth = 0,
++        uint frameHeight = 0)
++    {
++        if (frameWidth != 0 && frameHeight != 0) return (frameWidth, frameHeight);
++        var profile = Resolve(productType, frameWidth, frameHeight);
++        return profile.HasScreenSize
++            ? (profile.ScreenWidth, profile.ScreenHeight)
++            : (0u, 0u);
++    }
++
+     private static DeviceCornerProfile ResolveIPhone(int major, int minor)
+     {
+         if (major < 10 || RectangularIPhones.Contains((major, minor)))
+-            return DeviceCornerProfile.Rectangular;
++            return RectangularIPhone;
+ 
+         // iPhone X shares the iPhone10 generation with iPhone 8, so it must be
+         // selected by minor identifier rather than the major generation.
+         if (major == 10) return minor is 3 or 6
+             ? IPhoneX
+-            : DeviceCornerProfile.Rectangular;
++            : RectangularIPhone;
+ 
+         if (major == 13) return minor switch
+         {
+@@ -109,7 +145,7 @@ internal static class DeviceCornerProfileResolver
+         // retain the rectangular Home-button display. The all-screen Air/Pro/
+         // mini/base families resume at iPad13,*.
+         if (major == 8) return IPadPro;
+-        if (major < 13) return DeviceCornerProfile.Rectangular;
++        if (major < 13) return RectangularIPad;
+ 
+         if (major == 13)
+         {
+diff --git a/src/App/Services/MultiDevicePreviewManager.cs b/src/App/Services/MultiDevicePreviewManager.cs
+index 2f09fe1..21deb53 100644
+--- a/src/App/Services/MultiDevicePreviewManager.cs
++++ b/src/App/Services/MultiDevicePreviewManager.cs
+@@ -145,11 +145,31 @@ internal sealed class MultiDevicePreviewManager : IDisposable
+             }
+             return (false, LocalizationService.Get("CaptureStopped"));
+         }
++        // Seed the independent window at the real device screen ratio instead
++        // of one hard-coded phone shape. The device's own reported stream
++        // geometry is exact and already follows rotation, so it wins; the
++        // ProductType family's native panel is the stand-in before any frame
++        // arrives. Both come from the single resolver dispatch that also picks
++        // the display outline. Apple TV/iPod families report no screen size and
++        // keep the historical start until a frame arrives.
++        var reportedWidth = 0u;
++        var reportedHeight = 0u;
++        if (DeviceViewModel.UdidEquals(viewModel.SelectedDevice?.Udid, device.Udid) &&
++            viewModel.SourceVideoWidth != 0 && viewModel.SourceVideoHeight != 0)
++        {
++            reportedWidth = viewModel.SourceVideoWidth;
++            reportedHeight = viewModel.SourceVideoHeight;
++        }
++        var (sourceWidth, sourceHeight) = DeviceCornerProfileResolver.ResolveScreenSize(
++            device.ProductType, reportedWidth, reportedHeight);
++        sourceWidth = sourceWidth != 0 ? sourceWidth : 1206;
++        sourceHeight = sourceHeight != 0 ? sourceHeight : 2622;
+         var profile = DeviceCornerProfileResolver.Resolve(device.ProductType, 1206, 2622);
+         var cornerRadius = profile.IsRounded ? profile.RadiusRatio : 0;
+         _ = Interop.NativeCore.SetDeviceCornerProfile(started.Handle,
+             cornerRadius, profile.CurveExponent);
+-        if (!NativePreviewWindow.TryCreateAndShowForSession(started.Handle, 1206, 2622,
++        if (!NativePreviewWindow.TryCreateAndShowForSession(started.Handle,
++                sourceWidth, sourceHeight,
+                 $"iPhoneMirror — {device.DisplayName}", cornerRadius, profile.CurveExponent,
+                 () => viewModel.IsDeviceAudioEnabled(device.Udid),
+                  () => viewModel.ActiveDeviceSessionCount,

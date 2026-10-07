@@ -14,6 +14,10 @@
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
+                    <!-- 设备外框（投屏窗口）：必须定义在应用级资源中。
+                         若定义在元素自身的 Resources 里，该元素自身属性（如 Background）
+                         将无法解析到它，会抛 XamlParseException 导致窗口构造失败。 -->
+                    <SolidColorBrush x:Key="DeviceBezelBrush" Color="#1B1B20" />
                     <SolidColorBrush x:Key="IconBorder" Color="#25000000" />
                     <AcrylicBrush
                         x:Key="NavigationViewUnfoldedPaneBackground"
@@ -23,6 +27,7 @@
                         TintOpacity="0.0" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="DeviceBezelBrush" Color="#15151a" />
                     <SolidColorBrush x:Key="IconBorder" Color="#10FFFFFF" />
                     <AcrylicBrush
                         x:Key="NavigationViewUnfoldedPaneBackground"

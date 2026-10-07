@@ -10,7 +10,7 @@
   <Identity
     Name="AirPlay.App"
     Publisher="CN=Natsurainko"
-    Version="1.0.1.0" />
+    Version="1.0.2.0" />
 	
   <Properties>
     <DisplayName>AirPlay App</DisplayName>
@@ -48,5 +48,6 @@
     <Capability Name="internetClient" />
     <Capability Name="internetClientServer" />
     <Capability Name="privateNetworkClientServer" />
+    <uap:Capability Name="picturesLibrary" />
   </Capabilities>
 </Package>

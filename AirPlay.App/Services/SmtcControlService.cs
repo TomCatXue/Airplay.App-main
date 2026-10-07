@@ -36,7 +36,6 @@ public class SmtcControlService : IHostedService
         bool enable = device?.EnableControl ?? false;
 
         Smtc.IsEnabled = enable;
-        Smtc.IsEnabled = enable;
         Smtc.IsPlayEnabled = enable;
         Smtc.IsPauseEnabled = enable;
         Smtc.IsNextEnabled = enable;

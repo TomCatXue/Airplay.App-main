@@ -51,6 +51,15 @@ public sealed partial class SettingsPage : Page
             if (index >= 0) selectedIndex = index;
         }
         NetworkCombo.SelectedIndex = selectedIndex;
+
+        // 顶栏作为窗口拖拽区（只在顶栏范围内）——不能把整个窗口设为标题栏，
+        // 否则 caption 区域会拦截滚轮手势，设置页 ScrollViewer 无法滚动。
+        try
+        {
+            var controlWindow = ((App)App.Current).Host.Services.GetRequiredService<ControlWindow>();
+            controlWindow.SetTitleBar(PageTitleBar);
+        }
+        catch { }
     }
 
     private void BackButton_Click(object sender, RoutedEventArgs e) => Frame.GoBack();
@@ -64,6 +73,8 @@ public sealed partial class SettingsPage : Page
         _settingsService.Settings.AirPlayPort = ParsePort(AirPlayPortBox.Text, 7100);
         _settingsService.Settings.NetworkAdapterId = (NetworkCombo.SelectedItem as ComboBoxItem)?.Tag as string;
 
+        // 显式持久化（此前依赖 SetStartWithWindowsAsync 内部的隐式 Save，脆弱）
+        _settingsService.Save();
         await _settingsService.SetStartWithWindowsAsync(StartWithWindowsToggle.IsOn);
 
         Frame.GoBack();

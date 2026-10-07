@@ -17,6 +17,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using WinUIEx;
 
@@ -39,7 +40,34 @@ public partial class App : Application
     /// </summary>
     public App()
     {
-        this.UnhandledException += (_, e) => System.Windows.Forms.MessageBox.Show(e.Message + e.Exception.ToString());
+        // 全局异常：写入 Serilog 文件日志并标记已处理，阻止 XAML stowed exception (0xC000027B) 直接闪退。
+        // 注意：处理器内绝不能再抛异常，且必须快速返回。
+        this.UnhandledException += (_, e) =>
+        {
+            try
+            {
+                Serilog.Log.Fatal(e.Exception, "Unhandled XAML exception (Message: {Message}, Handled=true)", e.Message);
+                System.Diagnostics.Debug.WriteLine($"[FATAL] {e.Exception}");
+            }
+            catch { }
+            finally
+            {
+                e.Handled = true;   // 关键：阻止进程终止
+            }
+        };
+
+        // 非 UI 线程未处理异常 + 未观察 Task 异常：落盘记录
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            try { Serilog.Log.Fatal(e.ExceptionObject as Exception, "AppDomain UnhandledException (IsTerminating={IsTerminating})", e.IsTerminating); }
+            catch { }
+        };
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            try { Serilog.Log.Fatal(e.Exception, "UnobservedTaskException (Observed=true)"); }
+            catch { }
+            finally { e.SetObserved(); }
+        };
 
         // 使用 NativeLibrary 加载 FFmpeg（绕过 DynamicallyLoadedBindings 的 ARM64 兼容问题）
         try
